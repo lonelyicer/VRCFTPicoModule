@@ -1,12 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using VRCFaceTracking;
-using VRCFaceTracking.Core.Params.Data;
 using VRCFaceTracking.Core.Params.Expressions;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace VRCFTPicoModule;
 
