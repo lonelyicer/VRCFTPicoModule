@@ -155,7 +155,7 @@ public class VRCFTPicoModule : ExtTrackingModule
         UpdataExpression(pShape);
     }
 
-    private float[] ParseData(byte[] receivedData)
+    private static float[] ParseData(byte[] receivedData)
     {
         var dataHeaderSize = Marshal.SizeOf<DataPackHeader>();
         var dataBodySize = Marshal.SizeOf<DataPackBody>();
