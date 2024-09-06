@@ -1,6 +1,8 @@
-﻿namespace VRCFTPicoModule;
+﻿using VRCFaceTracking;
 
-public class VRCFTPicoModule
+namespace VRCFTPicoModule;
+
+public class VRCFTPicoModule : ExtTrackingModule
 {
     
 }
