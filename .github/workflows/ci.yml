@@ -12,49 +12,65 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-      with:
-        submodules: recursive
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
 
-    - name: Setup .NET Core
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: '7.x'
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '7.x'
 
-    - name: Restore dependencies
-      run: dotnet restore
+      - name: Restore dependencies
+        run: dotnet restore
 
-    - name: Build
-      run: dotnet build --configuration Release --output ./output
+      - name: Build
+        run: dotnet build --configuration Release --output ./output
 
-    - name: Create Module JSON
-      run: |
-        $timestamp = Get-Date -Format o
-        $version = (Get-Content ./output/$(Get-Item ./output/*.dll).Name | ForEach-Object { $_.VersionInfo.ProductVersion })
-        $jsonContent = @{
-          "InstallationState" = 0
-          "ModuleId" = "f3df57d5-1c5b-887d-abb0-be555e14bf09"
-          "LastUpdated" = $timestamp
-          "Version" = $version
-          "Downloads" = 0
-          "Ratings" = 0
-          "Rating" = 0
-          "AuthorName" = "RingLo" # 请替换为实际作者名
-          "ModuleName" = "VRCFTPicoModule"
-          "ModuleDescription" = "The module provides face tracking for the Pico 4 Pro / Enterprise over PICO Connect for use with VRCFT."
-          "UsageInstructions" = "Just install it."
-          "DownloadUrl" = "https://github.com/lonelyicer/VRCFTPicoModule/releases/download/$version/VRCFTPicoModule.zip"
-          "ModulePageUrl" = "https://github.com/lonelyicer/VRCFTPicoModule"
-          "DllFileName" = "VRCFTPicoModule.dll"
-        } | ConvertTo-Json -Compress
-        $jsonContent | Set-Content -Path ./output/module.json 
+      - name: Extract AssemblyVersion from CSProj
+        run: |
+          $csprojPath = "./VRCFTPicoModule/VRCFTPicoModule.csproj"
+          [xml]$csproj = Get-Content $csprojPath
+          $namespaceManager = New-Object System.Xml.XmlNamespaceManager $csproj.NameTable
+          $namespaceManager.AddNamespace("msbuild", "http://schemas.microsoft.com/developer/msbuild/2003")
+          $assemblyVersion = $csproj.Project.PropertyGroup.AssemblyVersion
+          Write-Output "##[set-output name=ASSEMBLY_VERSION;]$assemblyVersion"
+        id: get-version
 
-    - name: Create ZIP Package
-      run: powershell Compress-Archive -Path ./output/* -DestinationPath ./output/VRCFTPicoModule.zip
+      - name: Create Module JSON
+        run: |
+          $uuid = [guid]::NewGuid().ToString()
+          $timestamp = Get-Date -Format o
+          $version = ${{ steps.get-version.outputs.ASSEMBLY_VERSION }}
+          $jsonContent = @{
+            "InstallationState" = 0
+            "ModuleId" = $uuid
+            "LastUpdated" = $timestamp
+            "Version" = $version
+            "Downloads" = 0
+            "Ratings" = 0
+            "Rating" = 0
+            "AuthorName" = "YourName"  # 请替换为实际作者名
+            "ModuleName" = "VRCFTPicoModule"
+            "ModuleDescription" = "The module provides face tracking for the Pico 4 Pro / Enterprise over PICO Connect for use with VRCFT."
+            "UsageInstructions" = "Just install it."
+            "DownloadUrl" = "https://github.com/lonelyicer/VRCFTPicoModule/releases/download/$version/VRCFTPicoModule.zip"
+            "ModulePageUrl" = "https://github.com/lonelyicer/VRCFTPicoModule"
+            "DllFileName" = "VRCFTPicoModule.dll"
+          } | ConvertTo-Json -Compress
+          $jsonContent | Set-Content -Path ./output/module.json 
 
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with: 
-        name: VRCFTPicoModule
-        path: ./output/VRCFTPicoModule.zip
+      - name: Create ZIP Package
+        run: |
+          $filesToZip = @(
+            "./output/module.json",
+            "./output/VRCFTPicoModule.dll"
+          )
+          Compress-Archive -Path $filesToZip -DestinationPath ./output/VRCFTPicoModule.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VRCFTPicoModule
+          path: ./output/VRCFTPicoModule.zip
