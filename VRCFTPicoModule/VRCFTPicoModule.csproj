@@ -11,4 +11,15 @@
       <ProjectReference Include="..\VRCFaceTracking\VRCFaceTracking.Core\VRCFaceTracking.Core.csproj" />
     </ItemGroup>
 
+	<ItemGroup>
+		<EmbeddedResource Include="Assets\pico.png">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</EmbeddedResource>
+	</ItemGroup>
+
+
+	<Target Name="PostBuild" AfterTargets="Build" Condition="'$(ContinuousIntegrationBuild)' != 'true'">
+		<Copy SourceFiles="$(TargetPath)" DestinationFiles="$(APPDATA)\VRCFaceTracking\CustomLibs\$(TargetFileName)" OverwriteReadOnlyFiles="True" SkipUnchangedFiles="True" />
+	</Target>
+
 </Project>
