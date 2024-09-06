@@ -40,18 +40,17 @@ jobs:
 
       - name: Create Module JSON
         run: |
-          $uuid = [guid]::NewGuid().ToString()
           $timestamp = Get-Date -Format o
           $version = ${{ steps.get-version.outputs.ASSEMBLY_VERSION }}
           $jsonContent = @{
             "InstallationState" = 0
-            "ModuleId" = $uuid
+            "ModuleId" = "f3df57d5-1c5b-887d-abb0-be555e14bf09"
             "LastUpdated" = $timestamp
             "Version" = $version
             "Downloads" = 0
             "Ratings" = 0
             "Rating" = 0
-            "AuthorName" = "YourName"  # 请替换为实际作者名
+            "AuthorName" = "RingLo"
             "ModuleName" = "VRCFTPicoModule"
             "ModuleDescription" = "The module provides face tracking for the Pico 4 Pro / Enterprise over PICO Connect for use with VRCFT."
             "UsageInstructions" = "Just install it."
