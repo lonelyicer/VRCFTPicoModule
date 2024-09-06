@@ -1,0 +1,69 @@
+name: CI (Build)
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master", "dev" ]
+
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '7.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --output ./output
+
+      - name: Extract AssemblyVersion from CSProj
+        id: get-version
+        run: |
+          $csprojPath = "./VRCFTPicoModule/VRCFTPicoModule.csproj"
+          [xml]$csproj = Get-Content $csprojPath
+          $namespaceManager = New-Object System.Xml.XmlNamespaceManager $csproj.NameTable
+          $namespaceManager.AddNamespace("msbuild", "http://schemas.microsoft.com/developer/msbuild/2003")
+          $assemblyVersion = $csproj.Project.PropertyGroup.AssemblyVersion
+          Write-Output "ASSEMBLY_VERSION=$assemblyVersion" >> $env:GITHUB_ENV
+
+      - name: Create Module JSON
+        run: |
+          $timestamp = Get-Date -Format o
+          $version = $env:ASSEMBLY_VERSION
+          $jsonContent = @{
+            "InstallationState" = 0
+            "ModuleId" = "f3df57d5-1c5b-887d-abb0-be555e14bf09"
+            "LastUpdated" = $timestamp
+            "Version" = $version
+            "Downloads" = 0
+            "Ratings" = 0
+            "Rating" = 0
+            "AuthorName" = "RingLo"
+            "ModuleName" = "VRCFTPicoModule"
+            "ModuleDescription" = "The module provides face tracking for the Pico 4 Pro / Enterprise over PICO Connect for use with VRCFT."
+            "UsageInstructions" = "You need to change the value of ‘faceTrackingTransferProtocol’ in ‘%AppData%/PICO Connect/settings.json’ to 2."
+            "DownloadUrl" = "https://github.com/lonelyicer/VRCFTPicoModule/releases/download/$version/VRCFTPicoModule.zip"
+            "ModulePageUrl" = "https://github.com/lonelyicer/VRCFTPicoModule"
+            "DllFileName" = "VRCFTPicoModule.dll"
+          } | ConvertTo-Json -Compress
+          $jsonContent | Set-Content -Path ./output/module.json 
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VRCFTPicoModule
+          path: |
+            ./output/VRCFTPicoModule.dll
+            ./output/module.json
