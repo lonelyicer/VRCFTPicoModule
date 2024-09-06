@@ -2,9 +2,9 @@ name: CI (Build)
 
 on:
   push:
-    branches: [ "main", "dev" ]
+    branches: [ "master", "dev" ]
   pull_request:
-    branches: [ "main", "dev" ]
+    branches: [ "master", "dev" ]
 
 
 jobs:
@@ -29,19 +29,19 @@ jobs:
         run: dotnet build --configuration Release --output ./output
 
       - name: Extract AssemblyVersion from CSProj
+        id: get-version
         run: |
           $csprojPath = "./VRCFTPicoModule/VRCFTPicoModule.csproj"
           [xml]$csproj = Get-Content $csprojPath
           $namespaceManager = New-Object System.Xml.XmlNamespaceManager $csproj.NameTable
           $namespaceManager.AddNamespace("msbuild", "http://schemas.microsoft.com/developer/msbuild/2003")
           $assemblyVersion = $csproj.Project.PropertyGroup.AssemblyVersion
-          Write-Output "##[set-output name=ASSEMBLY_VERSION;]$assemblyVersion"
-        id: get-version
+          Write-Output "ASSEMBLY_VERSION=$assemblyVersion" >> $env:GITHUB_ENV
 
       - name: Create Module JSON
         run: |
           $timestamp = Get-Date -Format o
-          $version = ${{ steps.get-version.outputs.ASSEMBLY_VERSION }}
+          $version = $env:ASSEMBLY_VERSION
           $jsonContent = @{
             "InstallationState" = 0
             "ModuleId" = "f3df57d5-1c5b-887d-abb0-be555e14bf09"
@@ -60,16 +60,10 @@ jobs:
           } | ConvertTo-Json -Compress
           $jsonContent | Set-Content -Path ./output/module.json 
 
-      - name: Create ZIP Package
-        run: |
-          $filesToZip = @(
-            "./output/module.json",
-            "./output/VRCFTPicoModule.dll"
-          )
-          Compress-Archive -Path $filesToZip -DestinationPath ./output/VRCFTPicoModule.zip
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: VRCFTPicoModule
-          path: ./output/VRCFTPicoModule.zip
+          path: |
+            ./output/VRCFTPicoModule.zip
+            ./output/module.json
