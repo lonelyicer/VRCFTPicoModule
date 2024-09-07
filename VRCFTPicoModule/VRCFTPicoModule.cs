@@ -2,6 +2,7 @@
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using VRCFaceTracking;
+using VRCFaceTracking.Core.Library;
 using VRCFaceTracking.Core.Params.Expressions;
 
 namespace VRCFTPicoModule;
@@ -134,6 +135,9 @@ public class VRCFTPicoModule : ExtTrackingModule
 
     public override void Update()
     {
+        if (Status != ModuleState.Active)
+            return;
+
         byte[] receivedData;
 
         try
@@ -162,8 +166,6 @@ public class VRCFTPicoModule : ExtTrackingModule
         var dataSize = dataHeaderSize + dataBodySize;
         if (receivedData.Length < dataSize)
             return Array.Empty<float>();
-
-        var span = receivedData.AsSpan();
 
         var header = ByteArrayToStructure<DataPackHeader>(receivedData, 0);
         if (header.trackingType != 2)
