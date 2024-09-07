@@ -163,8 +163,6 @@ public class VRCFTPicoModule : ExtTrackingModule
         if (receivedData.Length < dataSize)
             return Array.Empty<float>();
 
-        var span = receivedData.AsSpan();
-
         var header = ByteArrayToStructure<DataPackHeader>(receivedData, 0);
         if (header.trackingType != 2)
             return Array.Empty<float>();
