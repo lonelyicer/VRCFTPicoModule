@@ -2,6 +2,7 @@
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using VRCFaceTracking;
+using VRCFaceTracking.Core.Library;
 using VRCFaceTracking.Core.Params.Expressions;
 
 namespace VRCFTPicoModule;
@@ -134,6 +135,9 @@ public class VRCFTPicoModule : ExtTrackingModule
 
     public override void Update()
     {
+        if (Status != ModuleState.Active)
+            return;
+
         byte[] receivedData;
 
         try
