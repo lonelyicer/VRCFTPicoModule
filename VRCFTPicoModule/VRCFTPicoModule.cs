@@ -293,7 +293,7 @@ public class VRCFTPicoModule : ExtTrackingModule
         try
         {
             Marshal.Copy(bytes, offset, ptr, size);
-            return (T)Marshal.PtrToStructure(ptr, typeof(T));
+            return (T)Marshal.PtrToStructure(ptr, typeof(T))!;
         }
         finally
         {
