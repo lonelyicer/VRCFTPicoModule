@@ -225,6 +225,11 @@ public partial class VRCFTPicoModule : ExtTrackingModule
 
     public override void Teardown()
     {
+        foreach (var client in Clients)
+        {
+            if (client != null)
+                client.Dispose();
+        }
         udpClient.Dispose();
     }
 }
