@@ -23,7 +23,10 @@ public partial class VRCFTPicoModule : ExtTrackingModule
     public override (bool eyeSuccess, bool expressionSuccess) Initialize(bool eyeAvailable, bool expressionAvailable)
     {
         Logger.LogInformation("Starting initialization");
-        return InitializeAsync().GetAwaiter().GetResult();
+        var initializeAsync = InitializeAsync().GetAwaiter().GetResult();
+        if (initializeAsync.Item1 && initializeAsync.Item2)
+            UpdateModuleInfo();
+        return initializeAsync;
     }
 
     private async Task<(bool, bool)> InitializeAsync()
@@ -43,12 +46,15 @@ public partial class VRCFTPicoModule : ExtTrackingModule
         Port = Ports[portIndex];
         udpClient = new UdpClient(Port);
         Logger.LogInformation("Using port: {0}", Port);
-
-        ModuleInformation.Name = "PICO Connect";
-        using var stream = GetType().Assembly.GetManifestResourceStream("VRCFTPicoModule.Assets.pico.png");
-        ModuleInformation.StaticImages = stream != null ? new List<Stream> { stream } : ModuleInformation.StaticImages;
-
+        
         return (true, true);
+    }
+
+    private void UpdateModuleInfo()
+    {
+        ModuleInformation.Name = "PICO Connect";
+        var stream = GetType().Assembly.GetManifestResourceStream("VRCFTPicoModule.Assets.pico.png");
+        ModuleInformation.StaticImages = stream != null ? new List<Stream> { stream } : ModuleInformation.StaticImages;
     }
 
     private async Task<int> ListenOnPorts()
@@ -86,7 +92,7 @@ public partial class VRCFTPicoModule : ExtTrackingModule
             if (pShape != null)
             {
                 UpdateEye(pShape);
-                UpdataExpression(pShape);
+                UpdateExpression(pShape);
             }
         }
         catch (Exception)
@@ -127,7 +133,7 @@ public partial class VRCFTPicoModule : ExtTrackingModule
         #endregion
     }
 
-    private static void UpdataExpression(float[] pShape)
+    private static void UpdateExpression(float[] pShape)
     {
         #region Brow
         SetParam(pShape, BlendShape.Index.BrowInnerUp, UnifiedExpressions.BrowInnerUpLeft);
@@ -156,10 +162,10 @@ public partial class VRCFTPicoModule : ExtTrackingModule
         #endregion
 
         #region Cheek
-        SetParam(pShape, BlendShape.Index.CheekPuff, UnifiedExpressions.CheekPuffLeft);
-        SetParam(pShape, BlendShape.Index.CheekPuff, UnifiedExpressions.CheekPuffRight);
         SetParam(pShape, BlendShape.Index.CheekSquint_L, UnifiedExpressions.CheekSquintLeft);
         SetParam(pShape, BlendShape.Index.CheekSquint_R, UnifiedExpressions.CheekSquintRight);
+        SetParam(pShape, BlendShape.Index.CheekPuff, UnifiedExpressions.CheekPuffLeft);
+        SetParam(pShape, BlendShape.Index.CheekPuff, UnifiedExpressions.CheekPuffRight);
         #endregion
 
         #region Nose
@@ -219,6 +225,11 @@ public partial class VRCFTPicoModule : ExtTrackingModule
 
     public override void Teardown()
     {
+        foreach (var client in Clients)
+        {
+            if (client != null)
+                client.Dispose();
+        }
         udpClient.Dispose();
     }
 }
