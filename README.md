@@ -1,6 +1,6 @@
 # VRCFTPicoModule
 
-[![GitHub Release](https://img.shields.io/github/v/release/lonelyicer/VRCFTPicoModule)](https://github.com/vrcx-team/VRCX/releases/)
+[![GitHub Release](https://img.shields.io/github/v/release/lonelyicer/VRCFTPicoModule)](https://github.com/lonelyicer/VRCFTPicoModule/releases/)
 [![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/lonelyicer/VRCFTPicoModule/total)](https://github.com/lonelyicer/VRCFTPicoModule/releases/latest)
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/lonelyicer/VRCFTPicoModule/ci.yml)](https://github.com/lonelyicer/VRCFTPicoModule/actions/workflows/ci.yml)
 
