@@ -82,22 +82,28 @@ public partial class VRCFTPicoModule : ExtTrackingModule
         if (Status != ModuleState.Active)
             return;
 
+        udpClient.Client.ReceiveTimeout = 100;
+        var endPoint = new IPEndPoint(IPAddress.Any, 0);
+        var pShape = new float[72];
         try
         {
-            var endPoint = new IPEndPoint(IPAddress.Any, 0);
             var data = udpClient.Receive(ref endPoint);
             bool isLegacy = Port == 29763;
-            var pShape = ParseData(data, isLegacy);
-
-            if (pShape != null)
-            {
-                UpdateEye(pShape);
-                UpdateExpression(pShape);
-            }
+            pShape = ParseData(data, isLegacy);
         }
-        catch (Exception)
+        catch (SocketException ex) when (ex.SocketErrorCode == SocketError.TimedOut)
         {
-            
+            Logger.LogWarning("Receive data timed out.");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning("Update failed with ex: {0}", ex);
+        }
+
+        if (pShape != null)
+        {
+            UpdateEye(pShape);
+            UpdateExpression(pShape);
         }
     }
 
