@@ -1,29 +1,22 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-    <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
-        <LangVersion>latest</LangVersion>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-		<AssemblyVersion>0.1.5</AssemblyVersion>
-		<FileVersion>$(AssemblyVersion)</FileVersion>
-		<Version>$(AssemblyVersion)</Version>
-    </PropertyGroup>
-
-
-    <ItemGroup>
-      <ProjectReference Include="..\VRCFaceTracking\VRCFaceTracking.Core\VRCFaceTracking.Core.csproj" />
-    </ItemGroup>
-
-	<ItemGroup>
-		<EmbeddedResource Include="Assets\pico.png">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</EmbeddedResource>
-	</ItemGroup>
-
-
-	<Target Name="PostBuild" AfterTargets="Build" Condition="'$(ContinuousIntegrationBuild)' != 'true'">
-		<Copy SourceFiles="$(TargetPath)" DestinationFiles="$(APPDATA)\VRCFaceTracking\CustomLibs\$(TargetFileName)" OverwriteReadOnlyFiles="True" SkipUnchangedFiles="True" />
-	</Target>
-
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyVersion>0.1.6</AssemblyVersion>
+    <FileVersion>$(AssemblyVersion)</FileVersion>
+    <Version>$(AssemblyVersion)</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\VRCFaceTracking\VRCFaceTracking.Core\VRCFaceTracking.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\pico.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
+  <Target Name="PostBuild" AfterTargets="Build" Condition="'$(ContinuousIntegrationBuild)' != 'true'">
+    <Copy SourceFiles="$(TargetPath)" DestinationFiles="$(APPDATA)\VRCFaceTracking\CustomLibs\$(TargetFileName)" OverwriteReadOnlyFiles="True" SkipUnchangedFiles="True" />
+  </Target>
 </Project>
