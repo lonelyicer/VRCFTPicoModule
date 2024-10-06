@@ -15,7 +15,7 @@ Download the latest module (VRCFTPicoModule.zip) and one step setup script (Setu
 Download the CI build from [here](https://github.com/lonelyicer/VRCFTPicoModule/actions/workflows/ci.yml).
 
 ### 2.Run one step setup script (optional)  
-Right Click the `SetupPICOConnect.ps1`, and select `Run witch Powershell`.
+Right Click the `SetupPICOConnect.ps1`, and select `Run with Powershell`.
 
 > [!NOTE]  
 > You may need change the execution policy in PowerShell  
