@@ -9,8 +9,6 @@
 
 VRCFTPicoModule is an extension module that adds support for PICO 4 Pro / Enterprise to [VRCFaceTracking](https://github.com/benaclejames/VRCFaceTracking).
 
-<div align="left">
-
 ## Getting Started
 ### 1.Download  
 Download the latest module (VRCFTPicoModule.zip) and one step setup script (SetupPICOConnect.ps1) from [here](https://github.com/lonelyicer/VRCFTPicoModule/releases/latest).  
@@ -36,6 +34,7 @@ Done! You have successfully installed the module.
 > [!IMPORTANT]  
 > If you are using `PICO Connect`.  
 > You will need to manually change the protocol version or run a one-step setup script.
-> > [!NOTE]  
-> > Manual change protocol version.  
-> > Change the value of ‘faceTrackingTransferProtocol’ in the ‘settings.json’ folder located in the ‘%AppData%/PICO Connect/’ directory to 2 or 1.
+
+> [!NOTE]  
+> To manual change protocol version,
+> you will need change the value of `faceTrackingTransferProtocol` in the `settings.json` folder located in the `%AppData%/PICO Connect/` directory to `2` or `1`.
