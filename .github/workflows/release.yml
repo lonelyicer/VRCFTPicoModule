@@ -1,0 +1,132 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '7.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --output ./output
+
+      - name: Extract AssemblyVersion from CSProj
+        id: get-version
+        run: |
+          $csprojPath = "./VRCFTPicoModule/VRCFTPicoModule.csproj"
+          [xml]$csproj = Get-Content $csprojPath
+          $assemblyVersion = $csproj.Project.PropertyGroup.AssemblyVersion
+          Write-Output "ASSEMBLY_VERSION=$assemblyVersion" >> $env:GITHUB_ENV
+
+      - name: Create Module JSON
+        run: |
+          $timestamp = Get-Date -Format o
+          $version = $env:ASSEMBLY_VERSION
+          $jsonContent = @{
+            "InstallationState" = 0
+            "ModuleId" = "f3df57d5-1c5b-887d-abb0-be555e14bf09"
+            "LastUpdated" = $timestamp
+            "Version" = $version
+            "Downloads" = 0
+            "Ratings" = 0
+            "Rating" = 0
+            "AuthorName" = "RingLo"
+            "ModuleName" = "VRCFTPicoModule"
+            "ModuleDescription" = "The module provides face tracking for the Pico 4 Pro / Enterprise over PICO Connect for use with VRCFT."
+            "UsageInstructions" = "You need to change the value of ‘faceTrackingTransferProtocol’ in ‘%AppData%/PICO Connect/settings.json’ to 1 or 2."
+            "DownloadUrl" = "https://github.com/lonelyicer/VRCFTPicoModule/releases/download/$version/VRCFTPicoModule.zip"
+            "ModulePageUrl" = "https://github.com/lonelyicer/VRCFTPicoModule"
+            "DllFileName" = "VRCFTPicoModule.dll"
+          } | ConvertTo-Json -Compress
+          $jsonContent | Set-Content -Path ./output/module.json 
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ env.ASSEMBLY_VERSION }}
+          release_name: Release ${{ env.ASSEMBLY_VERSION }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./output/VRCFTPicoModule.dll
+          asset_name: VRCFTPicoModule.dll
+          asset_content_type: application/octet-stream
+
+      - name: Upload Module JSON
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./output/module.json
+          asset_name: module.json
+          asset_content_type: application/json
+
+      - name: Upload Setup Script
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./SetupPICOConnect.ps1
+          asset_name: module.json
+          asset_content_type: application/octet-stream
+
+      - name: Create Zip Archive
+        run: |
+          $filesToZip = @(
+            './output/VRCFTPicoModule.dll',
+            './output/module.json'
+          )
+          Compress-Archive -Path $filesToZip -DestinationPath ./output/VRCFTPicoModule.zip
+
+      - name: Upload Zip Archive
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./output/VRCFTPicoModule.zip
+          asset_name: VRCFTPicoModule.zip
+          asset_content_type: application/zip
+
+      - name: Bump Version
+        run: |
+          $csprojPath = "./VRCFTPicoModule/VRCFTPicoModule.csproj"
+          [xml]$csproj = Get-Content $csprojPath
+          $currentVersion = [Version]$csproj.Project.PropertyGroup.AssemblyVersion
+          $newVersion = [Version]::new($currentVersion.Major, $currentVersion.Minor, $currentVersion.Build + 1)
+          $csproj.Project.PropertyGroup.AssemblyVersion = $newVersion.ToString()
+          $csproj.Save($csprojPath)
+
+      - name: Commit & Push Version Update
+        run: |
+          git config --local user.name "github-actions"
+          git config --local user.email "github-actions@github.com"
+          git add ./VRCFTPicoModule/VRCFTPicoModule.csproj
+          git commit -m "chore: prepare for next version: $newVersion"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
