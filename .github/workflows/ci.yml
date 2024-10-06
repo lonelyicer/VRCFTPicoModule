@@ -42,11 +42,13 @@ jobs:
         run: |
           $timestamp = Get-Date -Format o
           $version = $env:ASSEMBLY_VERSION
+          $commitHash = (git rev-parse --short HEAD)
+          $fullVersion = "$version-$commitHash"
           $jsonContent = @{
             "InstallationState" = 0
             "ModuleId" = "f3df57d5-1c5b-887d-abb0-be555e14bf09"
             "LastUpdated" = $timestamp
-            "Version" = $version
+            "Version" = $fullVersion
             "Downloads" = 0
             "Ratings" = 0
             "Rating" = 0
@@ -54,11 +56,11 @@ jobs:
             "ModuleName" = "VRCFTPicoModule"
             "ModuleDescription" = "The module provides face tracking for the Pico 4 Pro / Enterprise over PICO Connect for use with VRCFT."
             "UsageInstructions" = "You need to change the value of ‘faceTrackingTransferProtocol’ in ‘%AppData%/PICO Connect/settings.json’ to 1 or 2."
-            "DownloadUrl" = "https://github.com/lonelyicer/VRCFTPicoModule/releases/download/$version/VRCFTPicoModule.zip"
+            "DownloadUrl" = "https://github.com/lonelyicer/VRCFTPicoModule/releases/download/$fullVersion/VRCFTPicoModule.zip"
             "ModulePageUrl" = "https://github.com/lonelyicer/VRCFTPicoModule"
             "DllFileName" = "VRCFTPicoModule.dll"
           } | ConvertTo-Json -Compress
-          $jsonContent | Set-Content -Path ./output/module.json 
+          $jsonContent | Set-Content -Path ./output/module.json
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
