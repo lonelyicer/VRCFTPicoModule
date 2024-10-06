@@ -16,7 +16,7 @@ public partial class VRCFTPicoModule : ExtTrackingModule
     private static readonly UdpClient[] Clients = new UdpClient[Ports.Length];
     private static UdpClient udpClient = new();
     private static int Port = 0;
-
+    private static int timeOut = 0;
 
     public override (bool SupportsEye, bool SupportsExpression) Supported => (true, true);
 
@@ -93,7 +93,7 @@ public partial class VRCFTPicoModule : ExtTrackingModule
         }
         catch (SocketException ex) when (ex.SocketErrorCode == SocketError.TimedOut)
         {
-            Logger.LogWarning("Receive data timed out.");
+            timeOut++;
         }
         catch (Exception ex)
         {
@@ -104,6 +104,12 @@ public partial class VRCFTPicoModule : ExtTrackingModule
         {
             UpdateEye(pShape);
             UpdateExpression(pShape);
+        }
+
+        if (timeOut > 600)
+        {
+            Logger.LogWarning("Receive data timed out.");
+            timeOut = 0;
         }
     }
 
