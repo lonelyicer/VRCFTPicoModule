@@ -1,4 +1,4 @@
-name: Release
+name: Publish (Build)
 
 on:
   workflow_dispatch:
@@ -54,46 +54,6 @@ jobs:
           } | ConvertTo-Json -Compress
           $jsonContent | Set-Content -Path ./output/module.json 
 
-      - name: Create Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ env.ASSEMBLY_VERSION }}
-          release_name: Release ${{ env.ASSEMBLY_VERSION }}
-          draft: false
-          prerelease: false
-
-      - name: Upload Release Assets
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./output/VRCFTPicoModule.dll
-          asset_name: VRCFTPicoModule.dll
-          asset_content_type: application/octet-stream
-
-      - name: Upload Module JSON
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./output/module.json
-          asset_name: module.json
-          asset_content_type: application/json
-
-      - name: Upload Setup Script
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./SetupPICOConnect.ps1
-          asset_name: module.json
-          asset_content_type: application/octet-stream
-
       - name: Create Zip Archive
         run: |
           $filesToZip = @(
@@ -102,15 +62,20 @@ jobs:
           )
           Compress-Archive -Path $filesToZip -DestinationPath ./output/VRCFTPicoModule.zip
 
-      - name: Upload Zip Archive
-        uses: actions/upload-release-asset@v1
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ./output/VRCFTPicoModule.dll
+            ./output/module.json
+            ./output/VRCFTPicoModule.zip
+            ./SetupPICOConnect.ps1
+          tag_name: v${{ env.ASSEMBLY_VERSION }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./output/VRCFTPicoModule.zip
-          asset_name: VRCFTPicoModule.zip
-          asset_content_type: application/zip
 
       - name: Bump Version
         run: |
