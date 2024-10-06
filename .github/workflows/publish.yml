@@ -91,7 +91,7 @@ jobs:
           git config --local user.name "github-actions"
           git config --local user.email "github-actions@github.com"
           git add ./VRCFTPicoModule/VRCFTPicoModule.csproj
-          git commit -m "chore: prepare for next version: v$newVersion"
+          git commit -m "chore: prepare for next version: v$newVersion.ToString()"
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
