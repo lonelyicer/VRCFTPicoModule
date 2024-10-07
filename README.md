@@ -37,4 +37,4 @@ Done! You have successfully installed the module.
 
 > [!NOTE]  
 > To manual change protocol version,
-> you will need change the value of `faceTrackingTransferProtocol` in the `settings.json` folder located in the `%AppData%/PICO Connect/` directory to `2` or `1`.
+> you will need change the value of `faceTrackingTransferProtocol` in the `settings.json` file located in the `%AppData%/PICO Connect/` directory to `2` or `1`.
