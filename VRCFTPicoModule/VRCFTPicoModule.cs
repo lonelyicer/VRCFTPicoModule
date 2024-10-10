@@ -49,10 +49,7 @@ public partial class VRCFTPicoModule : ExtTrackingModule
     {
         ModuleInformation.Name = "PICO Connect";
         var stream = GetType().Assembly.GetManifestResourceStream("VRCFTPicoModule.Assets.pico.png");
-        if (stream != null)
-        {
-            ModuleInformation.StaticImages.Add(stream);
-        }
+        ModuleInformation.StaticImages = stream != null ? new List<Stream> { stream } : ModuleInformation.StaticImages;
     }
 
     private async Task<int> ListenOnPorts()
@@ -164,8 +161,26 @@ public partial class VRCFTPicoModule : ExtTrackingModule
         #region Cheek
         SetParam(pShape, BlendShape.Index.CheekSquint_L, UnifiedExpressions.CheekSquintLeft);
         SetParam(pShape, BlendShape.Index.CheekSquint_R, UnifiedExpressions.CheekSquintRight);
-        SetParam(pShape, BlendShape.Index.CheekPuff, UnifiedExpressions.CheekPuffLeft);
-        SetParam(pShape, BlendShape.Index.CheekPuff, UnifiedExpressions.CheekPuffRight);
+
+        float mouthLeft = pShape[(int)BlendShape.Index.MouthLeft];
+        float mouthRight = pShape[(int)BlendShape.Index.MouthRight];
+        float diffThreshold = 0.1f;
+
+        if (mouthLeft > mouthRight + diffThreshold)
+        {
+            UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.CheekPuffLeft].Weight = pShape[(int)BlendShape.Index.CheekPuff];
+            UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.CheekPuffRight].Weight = pShape[(int)BlendShape.Index.CheekPuff] + pShape[(int)BlendShape.Index.MouthLeft];
+        }
+        else if (mouthRight > mouthLeft + diffThreshold)
+        {
+            UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.CheekPuffLeft].Weight = pShape[(int)BlendShape.Index.CheekPuff] + pShape[(int)BlendShape.Index.MouthRight];
+            UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.CheekPuffRight].Weight = pShape[(int)BlendShape.Index.CheekPuff];
+        }
+        else
+        {
+            SetParam(pShape, BlendShape.Index.CheekPuff, UnifiedExpressions.CheekPuffLeft);
+            SetParam(pShape, BlendShape.Index.CheekPuff, UnifiedExpressions.CheekPuffRight);
+        }
         #endregion
 
         #region Nose
@@ -222,6 +237,7 @@ public partial class VRCFTPicoModule : ExtTrackingModule
     {
         UnifiedTracking.Data.Shapes[(int)outputType].Weight = pShape[(int)index];
     }
+
     public override void Teardown()
     {
         foreach (var client in Clients)
