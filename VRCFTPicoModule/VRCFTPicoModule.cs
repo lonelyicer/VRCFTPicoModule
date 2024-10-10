@@ -13,7 +13,7 @@ namespace VRCFTPicoModule;
 public partial class VRCFTPicoModule : ExtTrackingModule
 {
     private static readonly int[] Ports = { 29765, 29763 };
-    private static readonly UdpClient[] Clients = new UdpClient[Ports.Length];
+    private static readonly UdpClient[] Clients = Ports.Select(port => new UdpClient(port) { Client = { ReceiveTimeout = 100 } }).ToArray();
     private static UdpClient udpClient = new();
     private static int Port = 0;
     private static int timeOut = 0;
@@ -23,30 +23,25 @@ public partial class VRCFTPicoModule : ExtTrackingModule
     public override (bool eyeSuccess, bool expressionSuccess) Initialize(bool eyeAvailable, bool expressionAvailable)
     {
         Logger.LogInformation("Starting initialization");
-        var initializeAsync = InitializeAsync().GetAwaiter().GetResult();
-        if (initializeAsync.Item1 && initializeAsync.Item2)
+        var initializationResult = InitializeAsync().GetAwaiter().GetResult();
+        if (initializationResult.eyeSuccess && initializationResult.expressionSuccess)
+        {
             UpdateModuleInfo();
-        return initializeAsync;
+        }
+        return initializationResult;
     }
 
-    private async Task<(bool, bool)> InitializeAsync()
+    private async Task<(bool eyeSuccess, bool expressionSuccess)> InitializeAsync()
     {
-        for (int i = 0; i < Ports.Length; i++)
-        {
-            Clients[i] = new UdpClient(Ports[i]) { Client = { ReceiveTimeout = 100 } };
-            Logger.LogDebug("Startup UdpClient at port: {0}", Ports[i]);
-        }
+        Logger.LogDebug("Initializing UDP Clients on ports: {0}", string.Join(", ", Ports));
 
         int portIndex = await ListenOnPorts();
-        if (portIndex == -1)
-        {
-            return (false, false);
-        }
+        if (portIndex == -1) return (false, false);
 
         Port = Ports[portIndex];
         udpClient = new UdpClient(Port);
         Logger.LogInformation("Using port: {0}", Port);
-        
+
         return (true, true);
     }
 
@@ -54,7 +49,10 @@ public partial class VRCFTPicoModule : ExtTrackingModule
     {
         ModuleInformation.Name = "PICO Connect";
         var stream = GetType().Assembly.GetManifestResourceStream("VRCFTPicoModule.Assets.pico.png");
-        ModuleInformation.StaticImages = stream != null ? new List<Stream> { stream } : ModuleInformation.StaticImages;
+        if (stream != null)
+        {
+            ModuleInformation.StaticImages.Add(stream);
+        }
     }
 
     private async Task<int> ListenOnPorts()
@@ -72,44 +70,35 @@ public partial class VRCFTPicoModule : ExtTrackingModule
         }
         catch (Exception ex)
         {
-            Logger.LogError("Initialize failed, exception: {0}", ex);
+            Logger.LogError("Initialization failed, exception: {0}", ex);
         }
-        return -1; // indicate failure
+        return -1;
     }
 
     public override void Update()
     {
-        if (Status != ModuleState.Active)
-            return;
+        if (Status != ModuleState.Active) return;
 
-        udpClient.Client.ReceiveTimeout = 100;
-        var endPoint = new IPEndPoint(IPAddress.Any, 0);
-        var pShape = new float[72];
         try
         {
+            var endPoint = new IPEndPoint(IPAddress.Any, 0);
             var data = udpClient.Receive(ref endPoint);
-            bool isLegacy = Port == 29763;
-            pShape = ParseData(data, isLegacy);
-        }
-        catch (SocketException ex) when (ex.SocketErrorCode == SocketError.TimedOut)
-        {
-            timeOut++;
-        }
-        catch (Exception ex)
-        {
-            Logger.LogWarning("Update failed with ex: {0}", ex);
-        }
+            var pShape = ParseData(data, Port == 29763);
 
-        if (pShape != null)
-        {
             UpdateEye(pShape);
             UpdateExpression(pShape);
         }
-
-        if (timeOut > 600)
+        catch (SocketException ex) when (ex.SocketErrorCode == SocketError.TimedOut)
         {
-            Logger.LogWarning("Receive data timed out.");
-            timeOut = 0;
+            if (++timeOut > 600)
+            {
+                Logger.LogWarning("Receive data timed out.");
+                timeOut = 0;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning("Update failed with exception: {0}", ex);
         }
     }
 
@@ -124,7 +113,6 @@ public partial class VRCFTPicoModule : ExtTrackingModule
             if (header.trackingType == 2)
                 return DataPacketHelpers.ByteArrayToStructure<DataPacket.DataPackBody>(data, Marshal.SizeOf<DataPacket.DataPackHeader>()).blendShapeWeight;
         }
-
         return Array.Empty<float>();
     }
 
@@ -234,13 +222,11 @@ public partial class VRCFTPicoModule : ExtTrackingModule
     {
         UnifiedTracking.Data.Shapes[(int)outputType].Weight = pShape[(int)index];
     }
-
     public override void Teardown()
     {
         foreach (var client in Clients)
         {
-            if (client != null)
-                client.Dispose();
+            client.Dispose();
         }
         udpClient.Dispose();
     }
