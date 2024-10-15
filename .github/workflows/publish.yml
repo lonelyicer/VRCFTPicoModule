@@ -88,10 +88,13 @@ jobs:
 
       - name: Commit & Push Version Update
         run: |
+          $csprojPath = "./VRCFTPicoModule/VRCFTPicoModule.csproj"
+          [xml]$csproj = Get-Content $csprojPath
+          $Version = [Version]$csproj.Project.PropertyGroup.AssemblyVersion
           git config --local user.name "github-actions"
           git config --local user.email "github-actions@github.com"
           git add ./VRCFTPicoModule/VRCFTPicoModule.csproj
-          git commit -m "chore: prepare for next version: v$newVersion.ToString()"
+          git commit -m "chore: prepare for next version: v$Version.ToString()"
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
