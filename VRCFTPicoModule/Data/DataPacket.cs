@@ -2,7 +2,7 @@
 
 namespace VRCFTPicoModule.Data
 {
-    public class DataPacket
+    public abstract class DataPacket
     {
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct DataPackHeader

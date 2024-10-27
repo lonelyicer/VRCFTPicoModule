@@ -6,47 +6,36 @@ using VRCFaceTracking;
 using VRCFaceTracking.Core.Library;
 using VRCFaceTracking.Core.Params.Expressions;
 using VRCFTPicoModule.Data;
-using VRCFTPicoModule.Utils;
 
-namespace VRCFTPicoModule
+namespace VRCFTPicoModule.Utils
 {
-    public class Updater
+    public class Updater(UdpClient udpClient, ILogger logger, bool isLegacy)
     {
-        private readonly UdpClient udpClient;
-        private readonly ILogger logger;
-        private int timeOut = 0;
-        private float lastMouthLeft = 0f;
-        private float lastMouthRight = 0f;
-        private const float smoothingFactor = 0.5f;
-        private bool isLegecy = false;
-        public ModuleState moduleState;
-
-        public Updater(UdpClient udpClient, ILogger logger, bool isLegecy)
-        {
-            this.udpClient = udpClient;
-            this.logger = logger;
-            this.isLegecy = isLegecy;
-        }
+        private int _timeOut;
+        private float _lastMouthLeft;
+        private float _lastMouthRight;
+        private const float SmoothingFactor = 0.5f;
+        public ModuleState ModuleState;
 
         public void Update()
         {
-            if (moduleState != ModuleState.Active) return;
+            if (ModuleState != ModuleState.Active) return;
 
             try
             {
                 var endPoint = new IPEndPoint(IPAddress.Any, 0);
                 var data = udpClient.Receive(ref endPoint);
-                var pShape = ParseData(data, isLegecy);
+                var pShape = ParseData(data, isLegacy);
 
                 UpdateEye(pShape);
                 UpdateExpression(pShape);
             }
             catch (SocketException ex) when (ex.SocketErrorCode == SocketError.TimedOut)
             {
-                if (++timeOut > 600)
+                if (++_timeOut > 600)
                 {
                     logger.LogWarning("Receive data timed out.");
-                    timeOut = 0;
+                    _timeOut = 0;
                 }
             }
             catch (Exception ex)
@@ -62,7 +51,7 @@ namespace VRCFTPicoModule
 
             if (data.Length >= Marshal.SizeOf<DataPacket.DataPackHeader>() + Marshal.SizeOf<DataPacket.DataPackBody>())
             {
-                var header = DataPacketHelpers.ByteArrayToStructure<DataPacket.DataPackHeader>(data, 0);
+                var header = DataPacketHelpers.ByteArrayToStructure<DataPacket.DataPackHeader>(data);
                 if (header.trackingType == 2)
                     return DataPacketHelpers.ByteArrayToStructure<DataPacket.DataPackBody>(data, Marshal.SizeOf<DataPacket.DataPackHeader>()).blendShapeWeight;
             }
@@ -118,11 +107,11 @@ namespace VRCFTPicoModule
             SetParam(pShape, BlendShape.Index.CheekSquint_L, UnifiedExpressions.CheekSquintLeft);
             SetParam(pShape, BlendShape.Index.CheekSquint_R, UnifiedExpressions.CheekSquintRight);
 
-            float mouthLeft = SmoothValue(pShape[(int)BlendShape.Index.MouthLeft], ref lastMouthLeft);
-            float mouthRight = SmoothValue(pShape[(int)BlendShape.Index.MouthRight], ref lastMouthRight);
+            var mouthLeft = SmoothValue(pShape[(int)BlendShape.Index.MouthLeft], ref _lastMouthLeft);
+            var mouthRight = SmoothValue(pShape[(int)BlendShape.Index.MouthRight], ref _lastMouthRight);
 
-            float cheekPuff = pShape[(int)BlendShape.Index.CheekPuff];
-            float diffThreshold = 0.1f;
+            var cheekPuff = pShape[(int)BlendShape.Index.CheekPuff];
+            var diffThreshold = 0.1f;
 
             if (cheekPuff > 0.1f)
             {
@@ -201,7 +190,7 @@ namespace VRCFTPicoModule
 
         private float SmoothValue(float newValue, ref float lastValue)
         {
-            lastValue += (newValue - lastValue) * smoothingFactor;
+            lastValue += (newValue - lastValue) * SmoothingFactor;
             return lastValue;
         }
 
