@@ -20,6 +20,8 @@ namespace VRCFTPicoModule.Utils
         public void Update()
         {
             if (ModuleState != ModuleState.Active) return;
+            
+            udpClient.Client.ReceiveTimeout = 100;
 
             try
             {
