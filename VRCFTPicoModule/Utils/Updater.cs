@@ -11,9 +11,10 @@ namespace VRCFTPicoModule.Utils
 {
     public class Updater()
     {
-#pragma warning disable CS8618
+        #pragma warning disable CS8618 // Non-nullable field is **initialized**.
         private readonly UdpClient _udpClient;
         private readonly ILogger _logger;
+        #pragma warning restore CS8618
         private readonly bool _isLegacy;
         private readonly (bool, bool) _trackingAvailable;
 
@@ -24,7 +25,6 @@ namespace VRCFTPicoModule.Utils
             _isLegacy = isLegacy;
             _trackingAvailable = trackingAvailable;
         }
-#pragma warning restore CS8618
         
         private int _timeOut;
         private float _lastMouthLeft;
