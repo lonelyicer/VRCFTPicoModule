@@ -1,6 +1,7 @@
-﻿namespace VRCFTPicoModule.Data;
+﻿// ReSharper disable InconsistentNaming
+namespace VRCFTPicoModule.Data;
 
-public class BlendShape
+public abstract class BlendShape
 {
     public enum Index
     {

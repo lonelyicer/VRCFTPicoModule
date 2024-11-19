@@ -6,52 +6,66 @@ using VRCFaceTracking;
 using VRCFaceTracking.Core.Library;
 using VRCFaceTracking.Core.Params.Expressions;
 using VRCFTPicoModule.Data;
-using VRCFTPicoModule.Utils;
 
-namespace VRCFTPicoModule
+namespace VRCFTPicoModule.Utils
 {
-    public class Updater
+    public class Updater()
     {
-        private readonly UdpClient udpClient;
-        private readonly ILogger logger;
-        private int timeOut = 0;
-        private float lastMouthLeft = 0f;
-        private float lastMouthRight = 0f;
-        private const float smoothingFactor = 0.5f;
-        private bool isLegecy = false;
-        public ModuleState moduleState;
+        private readonly UdpClient? _udpClient;
+        private readonly ILogger? _logger;
+        private readonly bool _isLegacy;
+        private readonly (bool, bool) _trackingAvailable;
 
-        public Updater(UdpClient udpClient, ILogger logger, bool isLegecy)
+        public Updater(UdpClient udpClient, ILogger logger, bool isLegacy, (bool, bool) trackingAvailable) : this()
         {
-            this.udpClient = udpClient;
-            this.logger = logger;
-            this.isLegecy = isLegecy;
+            _udpClient = udpClient;
+            _logger = logger;
+            _isLegacy = isLegacy;
+            _trackingAvailable = trackingAvailable;
         }
+        
+        private int _timeOut;
+        private float _lastMouthLeft;
+        private float _lastMouthRight;
+        private const float SmoothingFactor = 0.5f;
+        private ModuleState _moduleState;
 
-        public void Update()
+        public void Update(ModuleState state)
         {
-            if (moduleState != ModuleState.Active) return;
+            if (_udpClient == null)
+                return;
+            
+            if (_logger == null)
+                return;
+            
+            _udpClient.Client.ReceiveTimeout = 100;
+            _moduleState = state;
+            
+            if (_moduleState != ModuleState.Active) return;
 
             try
             {
                 var endPoint = new IPEndPoint(IPAddress.Any, 0);
-                var data = udpClient.Receive(ref endPoint);
-                var pShape = ParseData(data, isLegecy);
-
-                UpdateEye(pShape);
-                UpdateExpression(pShape);
+                var data = _udpClient.Receive(ref endPoint);
+                var pShape = ParseData(data, _isLegacy);
+                
+                if (_trackingAvailable.Item1)
+                    UpdateEye(pShape);
+                
+                if (_trackingAvailable.Item2)
+                    UpdateExpression(pShape);
             }
             catch (SocketException ex) when (ex.SocketErrorCode == SocketError.TimedOut)
             {
-                if (++timeOut > 600)
+                if (++_timeOut > 600)
                 {
-                    logger.LogWarning("Receive data timed out.");
-                    timeOut = 0;
+                    _logger.LogWarning("Receive data timed out.");
+                    _timeOut = 0;
                 }
             }
             catch (Exception ex)
             {
-                logger.LogWarning("Update failed with exception: {0}", ex);
+                _logger.LogWarning("Update failed with exception: {0}", ex);
             }
         }
 
@@ -62,11 +76,11 @@ namespace VRCFTPicoModule
 
             if (data.Length >= Marshal.SizeOf<DataPacket.DataPackHeader>() + Marshal.SizeOf<DataPacket.DataPackBody>())
             {
-                var header = DataPacketHelpers.ByteArrayToStructure<DataPacket.DataPackHeader>(data, 0);
+                var header = DataPacketHelpers.ByteArrayToStructure<DataPacket.DataPackHeader>(data);
                 if (header.trackingType == 2)
                     return DataPacketHelpers.ByteArrayToStructure<DataPacket.DataPackBody>(data, Marshal.SizeOf<DataPacket.DataPackHeader>()).blendShapeWeight;
             }
-            return Array.Empty<float>();
+            return [];
         }
 
         private static void UpdateEye(float[] pShape)
@@ -84,10 +98,7 @@ namespace VRCFTPicoModule
             eye.Right.Gaze.x = pShape[(int)BlendShape.Index.EyeLookOut_R] - pShape[(int)BlendShape.Index.EyeLookIn_R];
             eye.Right.Gaze.y = pShape[(int)BlendShape.Index.EyeLookUp_R] - pShape[(int)BlendShape.Index.EyeLookDown_R];
             #endregion
-        }
-
-        private void UpdateExpression(float[] pShape)
-        {
+            
             #region Brow
             SetParam(pShape, BlendShape.Index.BrowInnerUp, UnifiedExpressions.BrowInnerUpLeft);
             SetParam(pShape, BlendShape.Index.BrowInnerUp, UnifiedExpressions.BrowInnerUpRight);
@@ -105,7 +116,10 @@ namespace VRCFTPicoModule
             SetParam(pShape, BlendShape.Index.EyeWide_L, UnifiedExpressions.EyeWideLeft);
             SetParam(pShape, BlendShape.Index.EyeWide_R, UnifiedExpressions.EyeWideRight);
             #endregion
+        }
 
+        private void UpdateExpression(float[] pShape)
+        {
             #region Jaw
             SetParam(pShape, BlendShape.Index.JawOpen, UnifiedExpressions.JawOpen);
             SetParam(pShape, BlendShape.Index.JawLeft, UnifiedExpressions.JawLeft);
@@ -118,11 +132,11 @@ namespace VRCFTPicoModule
             SetParam(pShape, BlendShape.Index.CheekSquint_L, UnifiedExpressions.CheekSquintLeft);
             SetParam(pShape, BlendShape.Index.CheekSquint_R, UnifiedExpressions.CheekSquintRight);
 
-            float mouthLeft = SmoothValue(pShape[(int)BlendShape.Index.MouthLeft], ref lastMouthLeft);
-            float mouthRight = SmoothValue(pShape[(int)BlendShape.Index.MouthRight], ref lastMouthRight);
+            var mouthLeft = SmoothValue(pShape[(int)BlendShape.Index.MouthLeft], ref _lastMouthLeft);
+            var mouthRight = SmoothValue(pShape[(int)BlendShape.Index.MouthRight], ref _lastMouthRight);
 
-            float cheekPuff = pShape[(int)BlendShape.Index.CheekPuff];
-            float diffThreshold = 0.1f;
+            var cheekPuff = pShape[(int)BlendShape.Index.CheekPuff];
+            const float diffThreshold = 0.1f;
 
             if (cheekPuff > 0.1f)
             {
@@ -195,13 +209,13 @@ namespace VRCFTPicoModule
             #endregion
 
             #region Tongue
-            SetParam(pShape, BlendShape.Index.TongueOut, UnifiedExpressions.TongueOut);
+            SetParam(pShape[(int)BlendShape.Index.TongueOut] > 0f ? 1f : 0f, UnifiedExpressions.TongueOut);
             #endregion
         }
 
-        private float SmoothValue(float newValue, ref float lastValue)
+        private static float SmoothValue(float newValue, ref float lastValue)
         {
-            lastValue += (newValue - lastValue) * smoothingFactor;
+            lastValue += (newValue - lastValue) * SmoothingFactor;
             return lastValue;
         }
 
