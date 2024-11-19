@@ -14,7 +14,6 @@ namespace VRCFTPicoModule.Utils
         private int _timeOut;
         private float _lastMouthLeft;
         private float _lastMouthRight;
-        private float _lastTongueOut;
         private const float SmoothingFactor = 0.5f;
         public ModuleState ModuleState;
 
@@ -58,7 +57,7 @@ namespace VRCFTPicoModule.Utils
                 if (header.trackingType == 2)
                     return DataPacketHelpers.ByteArrayToStructure<DataPacket.DataPackBody>(data, Marshal.SizeOf<DataPacket.DataPackHeader>()).blendShapeWeight;
             }
-            return Array.Empty<float>();
+            return [];
         }
 
         private static void UpdateEye(float[] pShape)
