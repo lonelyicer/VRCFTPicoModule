@@ -11,17 +11,15 @@ namespace VRCFTPicoModule.Utils
 {
     public class Updater()
     {
-        #pragma warning disable CS8618 // Non-nullable field is **initialized**.
-        private readonly UdpClient _udpClient;
-        private readonly ILogger _logger;
-        #pragma warning restore CS8618
+        private readonly UdpClient? _udpClient;
+        private readonly ILogger? _logger;
         private readonly bool _isLegacy;
         private readonly (bool, bool) _trackingAvailable;
 
         public Updater(UdpClient udpClient, ILogger logger, bool isLegacy, (bool, bool) trackingAvailable) : this()
         {
-            _udpClient = udpClient ?? throw new ArgumentNullException(nameof(udpClient));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _udpClient = udpClient;
+            _logger = logger;
             _isLegacy = isLegacy;
             _trackingAvailable = trackingAvailable;
         }
@@ -34,6 +32,12 @@ namespace VRCFTPicoModule.Utils
 
         public void Update(ModuleState state)
         {
+            if (_udpClient == null)
+                return;
+            
+            if (_logger == null)
+                return;
+            
             _udpClient.Client.ReceiveTimeout = 100;
             _moduleState = state;
             
