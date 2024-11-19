@@ -9,28 +9,32 @@ using VRCFTPicoModule.Data;
 
 namespace VRCFTPicoModule.Utils
 {
-    public class Updater(UdpClient udpClient, ILogger logger, bool isLegacy)
+    public class Updater(UdpClient udpClient, ILogger logger, bool isLegacy, (bool, bool) trackingAvailable)
     {
         private int _timeOut;
         private float _lastMouthLeft;
         private float _lastMouthRight;
         private const float SmoothingFactor = 0.5f;
-        public ModuleState ModuleState;
+        private ModuleState _moduleState;
 
-        public void Update()
+        public void Update(ModuleState state)
         {
-            if (ModuleState != ModuleState.Active) return;
-            
             udpClient.Client.ReceiveTimeout = 100;
+            _moduleState = state;
+            
+            if (_moduleState != ModuleState.Active) return;
 
             try
             {
                 var endPoint = new IPEndPoint(IPAddress.Any, 0);
                 var data = udpClient.Receive(ref endPoint);
                 var pShape = ParseData(data, isLegacy);
-
-                UpdateEye(pShape);
-                UpdateExpression(pShape);
+                
+                if (trackingAvailable.Item1)
+                    UpdateEye(pShape);
+                
+                if (trackingAvailable.Item2)
+                    UpdateExpression(pShape);
             }
             catch (SocketException ex) when (ex.SocketErrorCode == SocketError.TimedOut)
             {
@@ -75,10 +79,7 @@ namespace VRCFTPicoModule.Utils
             eye.Right.Gaze.x = pShape[(int)BlendShape.Index.EyeLookOut_R] - pShape[(int)BlendShape.Index.EyeLookIn_R];
             eye.Right.Gaze.y = pShape[(int)BlendShape.Index.EyeLookUp_R] - pShape[(int)BlendShape.Index.EyeLookDown_R];
             #endregion
-        }
-
-        private void UpdateExpression(float[] pShape)
-        {
+            
             #region Brow
             SetParam(pShape, BlendShape.Index.BrowInnerUp, UnifiedExpressions.BrowInnerUpLeft);
             SetParam(pShape, BlendShape.Index.BrowInnerUp, UnifiedExpressions.BrowInnerUpRight);
@@ -96,7 +97,10 @@ namespace VRCFTPicoModule.Utils
             SetParam(pShape, BlendShape.Index.EyeWide_L, UnifiedExpressions.EyeWideLeft);
             SetParam(pShape, BlendShape.Index.EyeWide_R, UnifiedExpressions.EyeWideRight);
             #endregion
+        }
 
+        private void UpdateExpression(float[] pShape)
+        {
             #region Jaw
             SetParam(pShape, BlendShape.Index.JawOpen, UnifiedExpressions.JawOpen);
             SetParam(pShape, BlendShape.Index.JawLeft, UnifiedExpressions.JawLeft);

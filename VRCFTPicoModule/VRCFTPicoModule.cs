@@ -12,17 +12,19 @@ public class VRCFTPicoModule : ExtTrackingModule
     private static UdpClient _udpClient = new();
     private static int _port;
     private Updater? _updater;
+    private (bool, bool) _trackingAvailable;
 
     public override (bool SupportsEye, bool SupportsExpression) Supported => (true, true);
 
     public override (bool eyeSuccess, bool expressionSuccess) Initialize(bool eyeAvailable, bool expressionAvailable)
     {
         Logger.LogInformation("Starting initialization");
+        _trackingAvailable = (eyeAvailable, expressionAvailable);
         var initializationResult = InitializeAsync().GetAwaiter().GetResult();
-        if (initializationResult is { eyeSuccess: true, expressionSuccess: true })
-        {
+        
+        if (!initializationResult.Item1 || !initializationResult.Item2)
             UpdateModuleInfo();
-        }
+        
         return initializationResult;
     }
 
@@ -30,16 +32,21 @@ public class VRCFTPicoModule : ExtTrackingModule
     {
         Logger.LogDebug("Initializing UDP Clients on ports: {0}", string.Join(", ", Ports));
 
-        int portIndex = await ListenOnPorts();
+        var portIndex = await ListenOnPorts();
         if (portIndex == -1) return (false, false);
 
         _port = Ports[portIndex];
         _udpClient = new UdpClient(_port);
         Logger.LogInformation("Using port: {0}", _port);
+        
+        if (!_trackingAvailable.Item1)
+            Logger.LogInformation("Eye tracking is disabled");
+        if (!_trackingAvailable.Item2)
+            Logger.LogInformation("Expression tracking is disabled");
 
-        _updater = new Updater(_udpClient, Logger, _port == Ports[1]);
+        _updater = new Updater(_udpClient, Logger, _port == Ports[1], _trackingAvailable);
 
-        return (true, true);
+        return _trackingAvailable;
     }
 
     private void UpdateModuleInfo()
@@ -78,8 +85,8 @@ public class VRCFTPicoModule : ExtTrackingModule
     {
         if (_updater == null)
             return;
-        _updater.ModuleState = Status;
-        _updater.Update();
+        
+        _updater.Update(Status);
     }
 
     public override void Teardown()
