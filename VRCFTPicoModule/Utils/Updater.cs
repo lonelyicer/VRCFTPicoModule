@@ -186,8 +186,7 @@ namespace VRCFTPicoModule.Utils
             #endregion
 
             #region Tongue
-            var tongueOut = pShape[(int)BlendShape.Index.TongueOut];
-            SetParam(tongueOut > 0f ? 1f : 0f, UnifiedExpressions.TongueOut);
+            SetParam(pShape[(int)BlendShape.Index.TongueOut] > 0f ? 1f : 0f, UnifiedExpressions.TongueOut);
             #endregion
         }
 
