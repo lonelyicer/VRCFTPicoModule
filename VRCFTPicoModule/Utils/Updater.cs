@@ -9,8 +9,23 @@ using VRCFTPicoModule.Data;
 
 namespace VRCFTPicoModule.Utils
 {
-    public class Updater(UdpClient udpClient, ILogger logger, bool isLegacy, (bool, bool) trackingAvailable)
+    public class Updater()
     {
+#pragma warning disable CS8618
+        private readonly UdpClient _udpClient;
+        private readonly ILogger _logger;
+        private readonly bool _isLegacy;
+        private readonly (bool, bool) _trackingAvailable;
+
+        public Updater(UdpClient udpClient, ILogger logger, bool isLegacy, (bool, bool) trackingAvailable) : this()
+        {
+            _udpClient = udpClient ?? throw new ArgumentNullException(nameof(udpClient));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _isLegacy = isLegacy;
+            _trackingAvailable = trackingAvailable;
+        }
+#pragma warning restore CS8618
+        
         private int _timeOut;
         private float _lastMouthLeft;
         private float _lastMouthRight;
@@ -19,7 +34,7 @@ namespace VRCFTPicoModule.Utils
 
         public void Update(ModuleState state)
         {
-            udpClient.Client.ReceiveTimeout = 100;
+            _udpClient.Client.ReceiveTimeout = 100;
             _moduleState = state;
             
             if (_moduleState != ModuleState.Active) return;
@@ -27,26 +42,26 @@ namespace VRCFTPicoModule.Utils
             try
             {
                 var endPoint = new IPEndPoint(IPAddress.Any, 0);
-                var data = udpClient.Receive(ref endPoint);
-                var pShape = ParseData(data, isLegacy);
+                var data = _udpClient.Receive(ref endPoint);
+                var pShape = ParseData(data, _isLegacy);
                 
-                if (trackingAvailable.Item1)
+                if (_trackingAvailable.Item1)
                     UpdateEye(pShape);
                 
-                if (trackingAvailable.Item2)
+                if (_trackingAvailable.Item2)
                     UpdateExpression(pShape);
             }
             catch (SocketException ex) when (ex.SocketErrorCode == SocketError.TimedOut)
             {
                 if (++_timeOut > 600)
                 {
-                    logger.LogWarning("Receive data timed out.");
+                    _logger.LogWarning("Receive data timed out.");
                     _timeOut = 0;
                 }
             }
             catch (Exception ex)
             {
-                logger.LogWarning("Update failed with exception: {0}", ex);
+                _logger.LogWarning("Update failed with exception: {0}", ex);
             }
         }
 
