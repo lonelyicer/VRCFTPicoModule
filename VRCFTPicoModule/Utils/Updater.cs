@@ -14,6 +14,7 @@ namespace VRCFTPicoModule.Utils
         private int _timeOut;
         private float _lastMouthLeft;
         private float _lastMouthRight;
+        private float _lastTongueOut;
         private const float SmoothingFactor = 0.5f;
         public ModuleState ModuleState;
 
@@ -113,7 +114,7 @@ namespace VRCFTPicoModule.Utils
             var mouthRight = SmoothValue(pShape[(int)BlendShape.Index.MouthRight], ref _lastMouthRight);
 
             var cheekPuff = pShape[(int)BlendShape.Index.CheekPuff];
-            var diffThreshold = 0.1f;
+            const float diffThreshold = 0.1f;
 
             if (cheekPuff > 0.1f)
             {
@@ -186,11 +187,12 @@ namespace VRCFTPicoModule.Utils
             #endregion
 
             #region Tongue
-            SetParam(pShape, BlendShape.Index.TongueOut, UnifiedExpressions.TongueOut);
+            var tongueOut = pShape[(int)BlendShape.Index.TongueOut];
+            SetParam(tongueOut > 0f ? 1f : 0f, UnifiedExpressions.TongueOut);
             #endregion
         }
 
-        private float SmoothValue(float newValue, ref float lastValue)
+        private static float SmoothValue(float newValue, ref float lastValue)
         {
             lastValue += (newValue - lastValue) * SmoothingFactor;
             return lastValue;
