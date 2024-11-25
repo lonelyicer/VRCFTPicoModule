@@ -1,0 +1,14 @@
+﻿{
+  "start-init": "正在开始初始化...",
+  "initializing-udp-clients": "正在端口 {0} 上初始化 UDP 客户端",
+  "using-port": "使用端口：{0}",
+  "eye-tracking-disabled": "眼部追踪已停用",
+  "expression-tracking-disabled": "表情追踪已停用",
+  "legacy-protocol": "旧版协议",
+  "full-face-tracking": "完整面部追踪",
+  "eye-tracking": "眼部追踪",
+  "expression-tracking": "表情追踪",
+  "init-failed": "初始化失败，原因：{0}",
+  "update-timeout": "接收数据超时",
+  "update-failed": "更新数据失败，原因：{0}"
+}

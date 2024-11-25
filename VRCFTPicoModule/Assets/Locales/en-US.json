@@ -1,0 +1,14 @@
+﻿{
+  "start-init": "Starting Initialization...",
+  "initializing-udp-clients": "Initializing UDP Clients on ports: {0}",
+  "using-port": "Using port: {0}",
+  "eye-tracking-disabled": "Eye tracking is disabled",
+  "expression-tracking-disabled": "Expression tracking is disabled",
+  "legacy-protocol": "Legacy Protocol",
+  "full-face-tracking": "Full FaceTracking",
+  "eye-tracking": "Eye Tracking",
+  "expression-tracking": "Expression Tracking",
+  "init-failed": "Initialization failed, exception: {0}",
+  "update-timeout": "Receive data timed out",
+  "update-failed": "Update failed with exception: {0}"
+}
