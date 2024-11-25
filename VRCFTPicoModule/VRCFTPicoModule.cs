@@ -1,7 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Globalization;
+using Microsoft.Extensions.Logging;
 using System.Net.Sockets;
 using VRCFaceTracking;
 using VRCFTPicoModule.Utils;
+using static VRCFTPicoModule.Utils.Localization;
 
 namespace VRCFTPicoModule;
 
@@ -18,40 +20,47 @@ public class VRCFTPicoModule : ExtTrackingModule
 
     public override (bool eyeSuccess, bool expressionSuccess) Initialize(bool eyeAvailable, bool expressionAvailable)
     {
-        Logger.LogInformation("Starting initialization");
+        Localization.Initialize(CultureInfo.CurrentUICulture.Name);
+        Logger.LogInformation(T("start-init"));
         _trackingAvailable = (eyeAvailable, expressionAvailable);
         var initializationResult = InitializeAsync().GetAwaiter().GetResult();
-        
-        if (!initializationResult.Item1 || !initializationResult.Item2)
-            UpdateModuleInfo();
+        UpdateModuleInfo(initializationResult);
         
         return initializationResult;
     }
 
     private async Task<(bool eyeSuccess, bool expressionSuccess)> InitializeAsync()
     {
-        Logger.LogDebug("Initializing UDP Clients on ports: {0}", string.Join(", ", Ports));
+        Logger.LogDebug(T("initializing-udp-clients"), string.Join(", ", Ports));
 
         var portIndex = await ListenOnPorts();
         if (portIndex == -1) return (false, false);
 
         _port = Ports[portIndex];
         _udpClient = new UdpClient(_port);
-        Logger.LogInformation("Using port: {0}", _port);
+        Logger.LogInformation(T("using-port"), _port);
         
         if (!_trackingAvailable.Item1)
-            Logger.LogInformation("Eye tracking is disabled");
+            Logger.LogInformation(T("eye-tracking-disabled"));
         if (!_trackingAvailable.Item2)
-            Logger.LogInformation("Expression tracking is disabled");
+            Logger.LogInformation(T("expression-tracking-disabled"));
 
         _updater = new Updater(_udpClient, Logger, _port == Ports[1], _trackingAvailable);
 
         return _trackingAvailable;
     }
 
-    private void UpdateModuleInfo()
+    private void UpdateModuleInfo((bool, bool) initializationResult)
     {
-        ModuleInformation.Name = "PICO Connect";
+        var moduleProtocol = _port == Ports[1] ? $" [{T("legacy-protocol")}]" : "";
+        var moduleTrackingStatus = initializationResult switch
+        {
+            { Item1: true, Item2: true } => T("full-face-tracking"),
+            { Item1: true, Item2: false } => T("eye-tracking"),
+            { Item1: false, Item2: true } => T("expression-tracking"),
+            _ => ""
+        };
+        ModuleInformation.Name = "PICO / " + moduleTrackingStatus + moduleProtocol;
         var stream = GetType().Assembly.GetManifestResourceStream("VRCFTPicoModule.Assets.pico.png");
         ModuleInformation.StaticImages = stream != null ? [stream] : ModuleInformation.StaticImages;
     }
@@ -75,7 +84,7 @@ public class VRCFTPicoModule : ExtTrackingModule
         }
         catch (Exception ex)
         {
-            Logger.LogError("Initialization failed, exception: {0}", ex);
+            Logger.LogError(T("init-failed"), ex);
         }
     
         return -1;
@@ -83,10 +92,7 @@ public class VRCFTPicoModule : ExtTrackingModule
 
     public override void Update()
     {
-        if (_updater == null)
-            return;
-        
-        _updater.Update(Status);
+        _updater?.Update(Status);
     }
 
     public override void Teardown()

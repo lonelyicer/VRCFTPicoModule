@@ -6,6 +6,7 @@ using VRCFaceTracking;
 using VRCFaceTracking.Core.Library;
 using VRCFaceTracking.Core.Params.Expressions;
 using VRCFTPicoModule.Data;
+using static VRCFTPicoModule.Utils.Localization;
 
 namespace VRCFTPicoModule.Utils
 {
@@ -59,13 +60,13 @@ namespace VRCFTPicoModule.Utils
             {
                 if (++_timeOut > 600)
                 {
-                    _logger.LogWarning("Receive data timed out.");
+                    _logger.LogWarning(T("update-timeout"));
                     _timeOut = 0;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning("Update failed with exception: {0}", ex);
+                _logger.LogWarning(T("update-failed"), ex);
             }
         }
 
@@ -74,13 +75,10 @@ namespace VRCFTPicoModule.Utils
             if (isLegacy && data.Length >= Marshal.SizeOf<LegacyDataPacket.DataPackBody>())
                 return DataPacketHelpers.ByteArrayToStructure<LegacyDataPacket.DataPackBody>(data).blendShapeWeight;
 
-            if (data.Length >= Marshal.SizeOf<DataPacket.DataPackHeader>() + Marshal.SizeOf<DataPacket.DataPackBody>())
-            {
-                var header = DataPacketHelpers.ByteArrayToStructure<DataPacket.DataPackHeader>(data);
-                if (header.trackingType == 2)
-                    return DataPacketHelpers.ByteArrayToStructure<DataPacket.DataPackBody>(data, Marshal.SizeOf<DataPacket.DataPackHeader>()).blendShapeWeight;
-            }
-            return [];
+            if (data.Length <
+                Marshal.SizeOf<DataPacket.DataPackHeader>() + Marshal.SizeOf<DataPacket.DataPackBody>()) return [];
+            var header = DataPacketHelpers.ByteArrayToStructure<DataPacket.DataPackHeader>(data);
+            return header.trackingType == 2 ? DataPacketHelpers.ByteArrayToStructure<DataPacket.DataPackBody>(data, Marshal.SizeOf<DataPacket.DataPackHeader>()).blendShapeWeight : [];
         }
 
         private static void UpdateEye(float[] pShape)
@@ -209,7 +207,7 @@ namespace VRCFTPicoModule.Utils
             #endregion
 
             #region Tongue
-            SetParam(pShape[(int)BlendShape.Index.TongueOut] > 0f ? 1f : 0f, UnifiedExpressions.TongueOut);
+            SetParam(pShape, BlendShape.Index.TongueOut, UnifiedExpressions.TongueOut);
             #endregion
         }
 

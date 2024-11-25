@@ -15,6 +15,16 @@
     <EmbeddedResource Include="Assets\pico.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
+    <None Remove="Assets\Locales\en-US.json" />
+    <EmbeddedResource Include="Assets\Locales\en-US.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Assets\Locales\zh-CN.json" />
+    <EmbeddedResource Include="Assets\Locales\zh-CN.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
   </ItemGroup>
   <Target Name="PostBuild" AfterTargets="Build" Condition="'$(ContinuousIntegrationBuild)' != 'true'">
     <Copy SourceFiles="$(TargetPath)" DestinationFiles="$(APPDATA)\VRCFaceTracking\CustomLibs\$(TargetFileName)" OverwriteReadOnlyFiles="True" SkipUnchangedFiles="True" />
