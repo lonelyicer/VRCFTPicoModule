@@ -171,8 +171,23 @@ namespace VRCFTPicoModule.Utils
             SetParam(pShape, BlendShape.Index.MouthUpperUp_R, UnifiedExpressions.MouthUpperUpRight);
             SetParam(pShape, BlendShape.Index.MouthLowerDown_L, UnifiedExpressions.MouthLowerDownLeft);
             SetParam(pShape, BlendShape.Index.MouthLowerDown_R, UnifiedExpressions.MouthLowerDownRight);
-            SetParam(pShape, BlendShape.Index.MouthFrown_L, UnifiedExpressions.MouthFrownLeft);
-            SetParam(pShape, BlendShape.Index.MouthFrown_R, UnifiedExpressions.MouthFrownRight);
+
+            var mouthFrownLeft = pShape[(int)BlendShape.Index.MouthFrown_L];
+            SetParam(pShape[(int)BlendShape.Index.JawOpen] > 0.1f
+                    ? mouthFrownLeft / 2f
+                    : pShape[(int)BlendShape.Index.MouthRollLower] > 0.2f 
+                        ? mouthFrownLeft * 2.5f + pShape[(int)BlendShape.Index.MouthRollLower]
+                        : mouthFrownLeft,
+                UnifiedExpressions.MouthFrownLeft);
+
+            var mouthFrownRight = pShape[(int)BlendShape.Index.MouthFrown_R];
+            SetParam(pShape[(int)BlendShape.Index.JawOpen] > 0.1f
+                    ? mouthFrownRight / 2f
+                    : pShape[(int)BlendShape.Index.MouthRollLower] > 0.2f
+                        ? mouthFrownRight * 2.5f + pShape[(int)BlendShape.Index.MouthRollLower]
+                        : mouthFrownRight,
+                UnifiedExpressions.MouthFrownRight);
+            
             SetParam(pShape, BlendShape.Index.MouthDimple_L, UnifiedExpressions.MouthDimpleLeft);
             SetParam(pShape, BlendShape.Index.MouthDimple_R, UnifiedExpressions.MouthDimpleRight);
             SetParam(pShape, BlendShape.Index.MouthLeft, UnifiedExpressions.MouthUpperLeft);
@@ -183,19 +198,56 @@ namespace VRCFTPicoModule.Utils
             SetParam(pShape, BlendShape.Index.MouthPress_R, UnifiedExpressions.MouthPressRight);
             SetParam(pShape, BlendShape.Index.MouthShrugLower, UnifiedExpressions.MouthRaiserLower);
             SetParam(pShape, BlendShape.Index.MouthShrugUpper, UnifiedExpressions.MouthRaiserUpper);
-            SetParam(pShape, BlendShape.Index.MouthSmile_L, UnifiedExpressions.MouthCornerPullLeft);
-            SetParam(pShape, BlendShape.Index.MouthSmile_L, UnifiedExpressions.MouthCornerSlantLeft);
-            SetParam(pShape, BlendShape.Index.MouthSmile_R, UnifiedExpressions.MouthCornerPullRight);
-            SetParam(pShape, BlendShape.Index.MouthSmile_R, UnifiedExpressions.MouthCornerSlantRight);
+
+            var mouthSmileLeft = pShape[(int)BlendShape.Index.MouthSmile_L] -
+                                 pShape[(int)BlendShape.Index.MouthRollLower];
+            SetParam(pShape[(int)BlendShape.Index.MouthRollLower] < 0.2f
+                    ? mouthSmileLeft
+                    : 0f,
+                UnifiedExpressions.MouthCornerPullLeft);
+            SetParam(pShape[(int)BlendShape.Index.MouthRollLower] < 0.2f
+                    ? mouthSmileLeft - pShape[(int)BlendShape.Index.MouthRollLower]
+                    : 0f,
+                UnifiedExpressions.MouthCornerSlantLeft);
+
+            var mouthSmileRight = pShape[(int)BlendShape.Index.MouthSmile_R] -
+                                  pShape[(int)BlendShape.Index.MouthRollLower];
+            SetParam(pShape[(int)BlendShape.Index.MouthRollLower] < 0.2f
+                    ? mouthSmileRight
+                    : 0f,
+                UnifiedExpressions.MouthCornerPullRight);
+            SetParam(pShape[(int)BlendShape.Index.MouthRollLower] < 0.2f
+                    ? mouthSmileRight
+                    : 0f,
+                UnifiedExpressions.MouthCornerSlantRight);
+            
             SetParam(pShape, BlendShape.Index.MouthStretch_L, UnifiedExpressions.MouthStretchLeft);
             SetParam(pShape, BlendShape.Index.MouthStretch_R, UnifiedExpressions.MouthStretchRight);
             #endregion
 
             #region Lip
-            SetParam(pShape, BlendShape.Index.MouthFunnel, UnifiedExpressions.LipFunnelUpperLeft);
-            SetParam(pShape, BlendShape.Index.MouthFunnel, UnifiedExpressions.LipFunnelUpperRight);
-            SetParam(pShape, BlendShape.Index.MouthFunnel, UnifiedExpressions.LipFunnelLowerLeft);
-            SetParam(pShape, BlendShape.Index.MouthFunnel, UnifiedExpressions.LipFunnelLowerRight);
+            var isFunnelLeft = pShape[(int)BlendShape.Index.MouthPucker] > 0.3f &&
+                               pShape[(int)BlendShape.Index.MouthPress_L] < 0.2f;
+            var isFunnelRight = pShape[(int)BlendShape.Index.MouthPucker] > 0.3f &&
+                               pShape[(int)BlendShape.Index.MouthPress_R] < 0.2f;
+            var mouthFunnelFixed = pShape[(int)BlendShape.Index.MouthPucker];
+            SetParam(isFunnelLeft
+                    ? mouthFunnelFixed
+                    : pShape[(int)BlendShape.Index.MouthFunnel],
+                UnifiedExpressions.LipFunnelUpperLeft);
+            SetParam(isFunnelRight
+                    ? mouthFunnelFixed
+                    : pShape[(int)BlendShape.Index.MouthFunnel],
+                UnifiedExpressions.LipFunnelUpperRight);
+            SetParam(isFunnelLeft
+                    ? mouthFunnelFixed
+                    : pShape[(int)BlendShape.Index.MouthFunnel],
+                UnifiedExpressions.LipFunnelLowerLeft);
+            SetParam(isFunnelRight
+                    ? mouthFunnelFixed
+                    : pShape[(int)BlendShape.Index.MouthFunnel],
+                UnifiedExpressions.LipFunnelLowerRight);
+            
             SetParam(pShape, BlendShape.Index.MouthPucker, UnifiedExpressions.LipPuckerUpperLeft);
             SetParam(pShape, BlendShape.Index.MouthPucker, UnifiedExpressions.LipPuckerUpperRight);
             SetParam(pShape, BlendShape.Index.MouthPucker, UnifiedExpressions.LipPuckerLowerLeft);
