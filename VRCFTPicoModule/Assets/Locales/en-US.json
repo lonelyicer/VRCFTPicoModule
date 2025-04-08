@@ -1,5 +1,8 @@
 ﻿{
   "start-init": "Starting Initialization...",
+  "config-path": "The configuration file will be in {0}",
+  "force-disable-eye": "Eye tracking is force disabled",
+  "force-disable-expression": "Expression tracking is force disabled",
   "initializing-udp-clients": "Initializing UDP Clients on ports: {0}",
   "using-port": "Using port: {0}",
   "eye-tracking-disabled": "Eye tracking is disabled",
