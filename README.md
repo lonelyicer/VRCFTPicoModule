@@ -38,3 +38,13 @@ Done! You have successfully installed the module.
 > [!NOTE]  
 > To manual change protocol version,
 > you will need change the value of `faceTrackingTransferProtocol` in the `settings.json` file located in the `%AppData%/PICO Connect/` directory to `2` or `1`.
+
+## Configuration  
+
+To selectively disable eye or facial expression tracking, please follow these steps:  
+
+### 1.Navigate to the module's configuration directory (path can be found in module logs)
+### 2.Create corresponding files:
+   - Create `.disable_eye` to disable eye tracking
+   - Create `.disable_expression` to disable facial expression tracking
+### 3.Restart the VRCFaceTracking for changes to take effect
