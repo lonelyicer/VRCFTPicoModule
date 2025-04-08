@@ -38,3 +38,13 @@ VRCFTPicoModule 是一个为 VRCFaceTracking 添加了对 PICO 4 Pro / Enterpris
 > [!NOTE]  
 > 要手动更改协议版本，
 > 你需要修改位于 `%AppData%/PICO Connect/` 目录下的 `settings.json` 文件内的 `faceTrackingTransferProtocol` 键对应的值为 `2` 或者 `1`。
+
+## 配置  
+
+如需单独禁用眼部或表情追踪功能，请按以下步骤操作：  
+
+### 1.打开模块的配置文件目录（路径可在模块日志中查看）
+### 2.在目录中创建对应文件：
+   - 创建 `.disable_eye` 文件关闭眼部追踪
+   - 创建 `.disable_expression` 文件关闭表情追踪
+### 3.重启 VRCFaceTracking 使配置生效

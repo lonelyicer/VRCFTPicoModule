@@ -1,5 +1,8 @@
 ﻿{
   "start-init": "正在开始初始化...",
+  "config-path": "配置文件将位于 {0}",
+  "force-disable-eye": "眼部追踪已强制关闭",
+  "force-disable-expression": "表情追踪已强制关闭",
   "initializing-udp-clients": "正在端口 {0} 上初始化 UDP 客户端",
   "using-port": "使用端口：{0}",
   "eye-tracking-disabled": "眼部追踪已停用",

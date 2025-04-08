@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using Microsoft.Extensions.Logging;
 using System.Net.Sockets;
+using System.Reflection;
 using VRCFaceTracking;
 using VRCFTPicoModule.Utils;
 using static VRCFTPicoModule.Utils.Localization;
@@ -22,7 +23,13 @@ public class VRCFTPicoModule : ExtTrackingModule
     {
         Localization.Initialize(CultureInfo.CurrentUICulture.Name);
         Logger.LogInformation(T("start-init"));
-        _trackingAvailable = (eyeAvailable, expressionAvailable);
+        
+        var config = ReadConfiguration();
+        _trackingAvailable = (
+            !config.Item1 && eyeAvailable,
+            !config.Item2 && expressionAvailable
+        );
+        
         var initializationResult = InitializeAsync().GetAwaiter().GetResult();
         UpdateModuleInfo(initializationResult);
         
@@ -48,6 +55,35 @@ public class VRCFTPicoModule : ExtTrackingModule
         _updater = new Updater(_udpClient, Logger, _port == Ports[1], _trackingAvailable);
 
         return _trackingAvailable;
+    }
+
+    private (bool, bool) ReadConfiguration()
+    {
+        var currentDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+        Logger.LogInformation(T("config-path"), currentDirectory);
+        
+        if (!Directory.Exists(currentDirectory))
+            return (false, false);
+        
+        var disableEye = false;
+        var disableExpression = false;
+        
+        var eyeFilePath = Path.Combine(currentDirectory, ".disable_eye");
+        if (File.Exists(eyeFilePath))
+        {
+            disableEye = true;
+            Logger.LogInformation(T("force-disable-eye"));
+        }
+
+        var expressionFilePath = Path.Combine(currentDirectory, ".disable_expression");
+        // ReSharper disable once InvertIf
+        if (File.Exists(expressionFilePath))
+        {
+            disableExpression = true;
+            Logger.LogInformation(T("force-disable-expression"));
+        }
+        
+        return (disableEye, disableExpression);
     }
 
     private void UpdateModuleInfo((bool, bool) initializationResult)
